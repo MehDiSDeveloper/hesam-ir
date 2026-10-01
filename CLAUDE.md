@@ -465,7 +465,7 @@ to the form with the success message. Pinned in `tests/test_admin_upload.py`.
 | Container | published on `127.0.0.1:8007` → 8000. Only Caddy is public (ports 80/443) |
 | Reverse proxy | Caddy on the host, automatic Let's Encrypt HTTPS. Config source `G:\Repos\devops\server\caddy\Caddyfile`, applied with `bash /g/Repos/devops/caddy-apply.sh` |
 | Runbook | `G:\Repos\devops\RUNBOOK.md` (server layout, logs, restart, backups, DNS). Keep it updated after any server change |
-| Source code | GitHub `MehDiSDeveloper/hesam-ir` (private). Only a backup/history: deploy uploads the local working copy, not git |
+| Source code | GitHub `MehDiSDeveloper/hesam-ir` (public). Only a backup/history: deploy uploads the local working copy, not git |
 
 **Deploy** (Windows PowerShell; takes the **local working copy**, uncommitted changes included, git is not involved):
 
