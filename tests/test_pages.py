@@ -4,12 +4,14 @@ These need a database, so they are TestCase rather than SimpleTestCase — still
 the stock Django class, which pytest-django runs unchanged.
 """
 
+import os
 from io import StringIO
+from unittest import mock
 
 from django.test import TestCase, override_settings
 
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
 
 from apps.content.models import Article, Post, Profile, Service
 from apps.core.templatetags.site_tags import md_breaks_field
@@ -121,12 +123,13 @@ class PageTests(TestCase):
         Article(slug="x", title_en="t", abstract_en="a", doi="https://doi.org/10.1/a").full_clean()
 
 
+@mock.patch.dict(os.environ, {"DJANGO_ADMIN_USERNAME": "hesam", "DJANGO_ADMIN_PASSWORD": "from-the-env"})
 class EnsureAdminTests(TestCase):
-    def test_creates_the_admin_once_and_keeps_it_usable(self):
+    def test_creates_the_admin_once_and_keeps_the_env_login_working(self):
         call_command("ensure_admin", stdout=StringIO())
         user = get_user_model().objects.get(username="hesam")
-        self.assertTrue(user.is_superuser and user.is_staff and user.check_password("raad505"))
-        self.assertTrue(self.client.login(username="hesam", password="raad505"))
+        self.assertTrue(user.is_superuser and user.is_staff and user.check_password("from-the-env"))
+        self.assertTrue(self.client.login(username="hesam", password="from-the-env"))
 
         user.is_active = user.is_staff = False
         user.set_password("changed")
@@ -134,8 +137,14 @@ class EnsureAdminTests(TestCase):
         call_command("ensure_admin", stdout=StringIO())
         user.refresh_from_db()
         self.assertTrue(user.is_active and user.is_staff)
-        self.assertTrue(user.check_password("changed"))  # a password changed in the admin is kept
+        self.assertTrue(user.check_password("from-the-env"))  # the .env wins on every boot
         self.assertEqual(get_user_model().objects.count(), 1)
+
+    def test_refuses_to_run_without_a_password(self):
+        with mock.patch.dict(os.environ, {"DJANGO_ADMIN_PASSWORD": ""}):
+            with self.assertRaises(CommandError):
+                call_command("ensure_admin", stdout=StringIO())
+        self.assertFalse(get_user_model().objects.exists())
 
 
 class MarkdownTests(TestCase):

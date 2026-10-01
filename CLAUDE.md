@@ -496,8 +496,9 @@ ssh vps "cd /srv/hesam-ir && docker compose ps && docker compose logs --tail 100
 **Specific to this app:**
 
 - Uploads (`/media/`) are served by **Caddy** from `/srv/hesam-ir/data/media`, because Django serves them only with `DEBUG` on.
-- The admin login comes from `DJANGO_ADMIN_USERNAME` / `DJANGO_ADMIN_PASSWORD` in the server `.env` (`ensure_admin` on every boot).
-  Without them it would create the default `hesam` / `raad505`, so never remove them.
+- The admin login comes from `DJANGO_ADMIN_USERNAME` / `DJANGO_ADMIN_PASSWORD` in the server `.env`. `ensure_admin` re-applies
+  them on **every boot**, so change the password in `.env`, not in the admin. Without `DJANGO_ADMIN_PASSWORD` the container
+  does not start (there is no default; the old default `raad505` is public in git history and must never be used again).
 - The Bale bot token in the server `.env` is the **production** bot. `start.sh` registers the webhook
   `https://hasan-naderi.ir/bale/<secret>/` on every boot. Don't run the same token locally: use a separate test bot in the local `.env`.
 - `start.sh` is saved with CRLF on Windows. `deploy.sh` fixes that on upload; the image itself would not start with CRLF.
@@ -514,11 +515,14 @@ docker compose up --build     # or: docker build -t naderirad . && docker run â€
 ```
 
 `start.sh` is the whole boot: `migrate`, then `ensure_admin`, then
-`collectstatic`, then gunicorn. **`ensure_admin` guarantees the owner's login**:
-it creates the superuser `hesam` / `raad505` (or `DJANGO_ADMIN_USERNAME` /
-`DJANGO_ADMIN_PASSWORD`) if it is missing, and re-enables active/staff/superuser
-on it if it exists; a password changed in the admin is kept unless
-`--reset-password` is passed. The dev override's command runs it too.
+`collectstatic`, then gunicorn. **`ensure_admin` guarantees the owner's login,
+with the same credentials after every deploy**: the environment is the source of
+truth. It creates the superuser `DJANGO_ADMIN_USERNAME` (default `hesam`) with
+`DJANGO_ADMIN_PASSWORD` if it is missing, re-enables active/staff/superuser, and
+sets the password back to the env value whenever it differs. There is **no
+default password** (the repo is public): without one the command fails and so
+does the boot. The dev override's command runs it too, so the local `.env`
+needs `DJANGO_ADMIN_PASSWORD` as well.
 WhiteNoise serves static with a one-year cache and a hashed manifest outside
 `DEBUG`. Uploads under `data/media/` are served by Django in `DEBUG` and by the
 front proxy or WhiteNoise in production â€” **if uploads 404 on the host, that is
