@@ -1,0 +1,25 @@
+{% load site_tags %}
+{% comment %}An article row is the post row with a paper's furniture: the venue in
+   place of the reading time when there is one, and a PDF badge. Lilac, like
+   every piece of writing. An article not written in the reader's language
+   shows its own text, marked with that language's lang/dir.{% endcomment %}
+{% with cl=article.content_language %}
+<a class="post-row reveal" href="{{ article.get_absolute_url }}" data-accent="lilac" data-tags="{% for tag in article.tags.all %}{{ tag.slug }} {% endfor %}" data-spot>
+  <div>
+    <h3 class="post-title"{% if cl != lang %} lang="{{ cl }}" dir="{% if cl == 'fa' %}rtl{% else %}ltr{% endif %}"{% endif %}>{{ article|tr:"title" }}</h3>
+    {% if article|tr:"abstract" %}<p class="post-ex"{% if cl != lang %} lang="{{ cl }}" dir="{% if cl == 'fa' %}rtl{% else %}ltr{% endif %}"{% endif %}>{{ article|tr:"abstract"|truncatechars:220 }}</p>{% endif %}
+    <div class="post-foot">
+      <time class="post-meta" datetime="{{ article.published_at|iso }}"><svg aria-hidden="true"><use href="#i-calendar"></use></svg>{{ article.published_at|smart_date:"day-month-year" }}</time>
+      {% if article|tr:"venue" %}
+        <span class="post-meta"><svg aria-hidden="true"><use href="#i-book"></use></svg>{{ article|tr:"venue"|truncatechars:60 }}</span>
+      {% else %}
+        <span class="post-meta num"><svg aria-hidden="true"><use href="#i-clock"></use></svg>{{ article.reading_minutes|fa_num }} {% t "blog.read_time" %}</span>
+      {% endif %}
+      {% if article.pdf %}<span class="tag mono">PDF</span>{% endif %}
+      {% if cl != lang %}<span class="tag mono">{{ cl|upper }}</span>{% endif %}
+      {% for tag in article.tags.all %}<span class="tag">{{ tag|tr:"name" }}</span>{% endfor %}
+    </div>
+  </div>
+  <span class="post-go" aria-hidden="true"><svg class="fwd"><use href="#i-arrow"></use></svg></span>
+</a>
+{% endwith %}

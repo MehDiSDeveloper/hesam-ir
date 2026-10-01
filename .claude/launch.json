@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hesam-dev",
+      "url": "http://localhost:8005"
+    },
+    {
+      "name": "hesam-runserver",
+      "runtimeExecutable": ".venv/Scripts/python",
+      "runtimeArgs": ["manage.py", "runserver", "8021"],
+      "port": 8021
+    }
+  ]
+}

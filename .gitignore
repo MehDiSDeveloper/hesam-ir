@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# secrets (only the example is committed)
+.env
+.env.*
+!.env.example
+
+# local-only compose override
+docker-compose.override.yml
+
+# runtime data (database, uploads, collected static, logs)
+data/db.sqlite3
+data/db.sqlite3-*
+data/media/
+data/staticfiles/
+data/geoip/
+data/*.log
+*.log
+
+# editors / OS
+.idea/
+.vscode/
+.claude/settings.local.json
+.DS_Store
+Thumbs.db

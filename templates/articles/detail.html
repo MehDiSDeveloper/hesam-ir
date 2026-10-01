@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load site_tags seo_tags %}
+
+{% block title %}{{ article|tr:"title" }} — {{ profile|tr:"full_name" }}{% endblock %}
+{% block description %}{% firstof article|tr:"abstract"|truncatechars:160 article|tr:"body"|plain|truncatechars:160 %}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ article|tr:"title" }}{% endblock %}
+{% block og_description %}{% firstof article|tr:"abstract"|truncatechars:200 article|tr:"body"|plain|truncatechars:200 %}{% endblock %}
+{% block og_image %}{% include "partials/og_image.html" with image=article.lead_image|default:profile.share_image alt=article|tr:"title" %}{% endblock %}
+{% block og_extra %}
+  <meta property="article:published_time" content="{{ article.published_at|iso }}">
+  <meta property="article:modified_time" content="{{ article.updated_at|iso }}">
+  {% for tag in article.tags.all %}<meta property="article:tag" content="{{ tag|tr:'name' }}">
+  {% endfor %}
+{% endblock %}
+{% block head_extra %}{% ld_article article %}{% endblock %}
+
+{% block content %}
+{% comment %}The post page with a paper's furniture: venue, authors, DOI, the PDF and
+   the publisher's link, and the abstract set apart from the body. Opened in a
+   language it is not written in, it shows the text it has, marked with its own
+   lang/dir, and the view has pointed the canonical tag at that language.{% endcomment %}
+{% with cl=article.content_language %}
+<article data-accent="lilac">
+  <header class="page-head">
+    <div class="narrow">
+      <nav aria-label="{% t 'nav.breadcrumb' %}">
+        <ol class="crumbs">
+          <li><a href="{% url 'home' %}">{% t "nav.home" %}</a></li>
+          <li aria-hidden="true"><svg><use href="#i-chevron"></use></svg></li>
+          <li><a href="{% url 'article_list' %}">{% t "articles.title" %}</a></li>
+        </ol>
+      </nav>
+      <h1 class="page-title"{% if cl != lang %} lang="{{ cl }}" dir="{% if cl == 'fa' %}rtl{% else %}ltr{% endif %}"{% endif %}>{{ article|tr:"title" }}</h1>
+      <div class="post-head-meta">
+        <time class="post-meta" datetime="{{ article.published_at|iso }}"><svg aria-hidden="true"><use href="#i-calendar"></use></svg>{{ article.published_at|smart_date:"day-month-year" }}</time>
+        {% if article|tr:"body" %}<span class="post-meta num"><svg aria-hidden="true"><use href="#i-clock"></use></svg>{{ article.reading_minutes|fa_num }} {% t "blog.read_time" %}</span>{% endif %}
+        {% for tag in article.tags.all %}<a class="tag" href="{% url 'article_list' %}?tag={{ tag.slug }}">{{ tag|tr:"name" }}</a>{% endfor %}
+      </div>
+
+      {% if article|tr:"venue" or article.authors or article.doi %}
+        <dl class="article-facts">
+          {% if article|tr:"venue" %}<div><dt>{% t "articles.venue" %}</dt><dd{% if cl != lang %} lang="{{ cl }}"{% endif %}>{{ article|tr:"venue" }}</dd></div>{% endif %}
+          {% if article.authors %}<div><dt>{% t "articles.authors" %}</dt><dd dir="auto">{{ article.authors }}</dd></div>{% endif %}
+          {% if article.doi %}<div><dt>DOI</dt><dd><a class="mono" href="{{ article.doi_url }}" target="_blank" rel="noopener" data-tip="{% t 'tip.new_tab' %}">{{ article.doi }}</a></dd></div>{% endif %}
+        </dl>
+      {% endif %}
+
+      {% if article.pdf or article.external_url %}
+        <div class="article-actions no-print">
+          {% if article.pdf %}
+            <a class="btn btn-primary" href="{{ article.pdf.url }}" download>
+              <svg aria-hidden="true"><use href="#i-download"></use></svg>{% t "articles.pdf" %}
+            </a>
+          {% endif %}
+          {% if article.external_url %}
+            <a class="btn btn-soft" href="{{ article.external_url }}" target="_blank" rel="noopener" data-tip="{% t 'tip.new_tab' %}">
+              <svg aria-hidden="true"><use href="#i-external"></use></svg>{% t "articles.external" %}
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if only_in %}
+        <div class="note" data-accent="sky" style="margin-top:18px">
+          <span class="note-ico" aria-hidden="true"><svg><use href="#i-translate"></use></svg></span>
+          <span>{% t "articles.only_in" %}
+            {% for l in language_links %}{% if l.code in only_in %}<a href="{{ l.url }}" hreflang="{{ l.code }}" lang="{{ l.code }}">{{ l.native }}</a> {% endif %}{% endfor %}
+          </span>
+        </div>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if article.cover %}
+    <figure class="narrow detail-cover">
+      <img src="{{ article.cover.url }}" alt="{{ article|tr:'title' }}" fetchpriority="high" decoding="async">
+    </figure>
+  {% endif %}
+
+  <section class="sec sec-flush">
+    <div class="narrow">
+      {% if article|tr:"abstract" %}
+        <section class="article-abstract"{% if cl != lang %} lang="{{ cl }}" dir="{% if cl == 'fa' %}rtl{% else %}ltr{% endif %}"{% endif %}>
+          <h2 class="eyebrow">{% t "articles.abstract" %}</h2>
+          <p>{{ article|tr:"abstract"|linebreaksbr }}</p>
+        </section>
+      {% endif %}
+
+      {% if article|tr:"body" %}
+        <div class="prose"{% if cl != lang %} lang="{{ cl }}" dir="{% if cl == 'fa' %}rtl{% else %}ltr{% endif %}"{% endif %}>{{ article|md_breaks:"body" }}</div>
+      {% endif %}
+
+      <div class="article-foot no-print">
+        <button class="btn btn-soft" type="button"
+                data-share="{{ site_url }}{{ article.get_absolute_url }}"
+                data-copied-label="{% t 'contact.copied' %}">
+          <svg aria-hidden="true"><use href="#i-share"></use></svg>{% t "blog.share" %}
+        </button>
+        <a class="btn btn-quiet" href="{% url 'article_list' %}">
+          <svg aria-hidden="true" style="rotate:180deg"><use href="#i-arrow"></use></svg>{% t "articles.back" %}
+        </a>
+      </div>
+    </div>
+  </section>
+</article>
+{% endwith %}
+
+{% if related %}
+<section class="sec sec-band" data-accent="lilac" style="padding-block:var(--sec)">
+  <div class="shell">
+    <header class="sec-head reveal">
+      <div><span class="eyebrow">More</span><h2 class="sec-title">{% t "articles.related" %}</h2></div>
+      <a class="more" href="{% url 'article_list' %}">
+        {% t "articles.all" %}
+        <svg class="fwd" aria-hidden="true"><use href="#i-arrow"></use></svg>
+      </a>
+    </header>
+    <div class="post-list">
+      {% for other in related %}{% include "partials/article_row.html" with article=other %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

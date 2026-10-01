@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load site_tags %}
+
+{% block title %}{% t "contact.title" %} — {{ profile|tr:"full_name" }}{% endblock %}
+{% block description %}{% t "contact.lede" %}{% endblock %}
+{% block robots %}{% if sent or throttled %}noindex, follow{% else %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block content %}
+<section class="page-head" data-accent="peach">
+  <div class="shell">
+    <span class="eyebrow">Contact</span>
+    <h1 class="page-title">{% t "contact.title" %}</h1>
+    <p class="sec-lede">{% t "contact.lede" %}</p>
+  </div>
+</section>
+
+<section class="sec sec-flush">
+  <div class="shell contact-grid">
+
+    {% comment %}Direct channels first: most people who open this page want an address,
+       not a form. Each row opens or copies itself with one tap.{% endcomment %}
+    <div>
+      <h2 class="side-h"><span class="block-ico" aria-hidden="true"><svg><use href="#i-sparkle"></use></svg></span>{% t "contact.direct" %}</h2>
+      <ul class="channels rhythm">
+        {% for link in profile.links %}
+          <li class="channel reveal" data-spot>
+            <span class="channel-ico" aria-hidden="true"><svg><use href="#i-{{ link.key }}"></use></svg></span>
+            <span class="channel-txt">
+              <b>{% t "channel."|add:link.key %}</b>
+              <span>{{ link.label }}</span>
+            </span>
+            <a class="mini-btn" href="{{ link.href }}" {% if link.key != "email" and link.key != "phone" %}target="_blank" rel="noopener"{% endif %}
+               aria-label="{% t 'tip.open' %} — {{ link.label }}" data-tip="{% t 'tip.open' %}">
+              <svg aria-hidden="true"><use href="#i-external"></use></svg>
+            </a>
+            <button class="mini-btn" type="button" data-copy="{{ link.copy }}"
+                    data-copied-label="{% t 'contact.copied' %}" aria-label="{% t 'contact.copy' %}" data-tip="{% t 'contact.copy' %}">
+              <svg aria-hidden="true"><use href="#i-copy"></use></svg>
+            </button>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <a class="card-link reveal" href="{% url 'card' %}" data-accent="mint" data-spot>
+        <span class="card-link-qr" aria-hidden="true"><svg><use href="#i-qr"></use></svg></span>
+        <span><b>{% t "card.title" %}</b><small>{% t "card.add_contact" %} · {% t "card.scan" %}</small></span>
+        <svg class="fwd" aria-hidden="true"><use href="#i-arrow"></use></svg>
+      </a>
+
+      {% if has_offer %}
+        <a class="card-link reveal" href="{% url 'services' %}" data-accent="peach" data-spot style="margin-top:10px">
+          <span class="card-link-qr" aria-hidden="true"><svg><use href="#i-briefcase"></use></svg></span>
+          <span><b>{% t "nav.services" %}</b><small>{{ profile|tr:"offer_title" }}</small></span>
+          <svg class="fwd" aria-hidden="true"><use href="#i-arrow"></use></svg>
+        </a>
+      {% endif %}
+    </div>
+
+    <div data-accent="peach">
+      <h2 class="side-h"><span class="block-ico" aria-hidden="true"><svg><use href="#i-send"></use></svg></span>{% t "contact.form" %}</h2>
+
+      {% if sent %}
+        <div class="note note-ok" data-accent="mint" role="status" style="margin-bottom:16px">
+          <span class="note-ico" aria-hidden="true"><svg><use href="#i-check"></use></svg></span>
+          <span>{% t "contact.sent" %}</span>
+        </div>
+      {% endif %}
+      {% if throttled %}
+        <div class="note" data-accent="peach" role="alert" style="margin-bottom:16px">
+          <span class="note-ico" aria-hidden="true"><svg><use href="#i-info"></use></svg></span>
+          <span>{% t "contact.too_fast" %}</span>
+        </div>
+      {% endif %}
+
+      <form class="form reveal" method="post" action="{% url 'contact' %}" novalidate data-form>
+        {% csrf_token %}
+
+        {# The honeypot. A human never sees it; a bot fills every field it finds. #}
+        <div class="hp" aria-hidden="true">
+          <label for="id_website">Website</label>
+          <input type="text" name="website" id="id_website" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label for="id_name">{% t "contact.name" %}</label>
+            <div class="control">
+              <svg aria-hidden="true"><use href="#i-user"></use></svg>
+              <input type="text" name="name" id="id_name" required maxlength="120"
+                     value="{{ form.name.value|default:'' }}" autocomplete="name"
+                     {% if form.name.errors %}aria-invalid="true" aria-describedby="err_name"{% endif %}>
+            </div>
+            {% if form.name.errors %}<span class="field-err" id="err_name">{{ form.name.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field">
+            <label for="id_subject">{% t "contact.subject" %} <small class="field-opt">{% t "contact.optional" %}</small></label>
+            <div class="control">
+              <svg aria-hidden="true"><use href="#i-pen"></use></svg>
+              <input type="text" name="subject" id="id_subject" maxlength="160" value="{{ form.subject.value|default:'' }}">
+            </div>
+          </div>
+        </div>
+
+        {% comment %}Email and phone: each optional, one required. They are one group with
+           one hint and one error, because the rule is about the pair, not either field.
+           app.js checks the same rule before sending; the server is the authority.{% endcomment %}
+        <fieldset class="reach{% if form.reach_missing %} is-invalid{% endif %}" data-reach
+                  aria-describedby="reach_hint{% if form.reach_missing %} reach_err{% endif %}">
+          <legend>{% t "contact.reach" %}</legend>
+          <p class="reach-hint" id="reach_hint">
+            <svg class="reach-todo" aria-hidden="true"><use href="#i-info"></use></svg><svg class="reach-ok" aria-hidden="true"><use href="#i-check"></use></svg>{% t "contact.reach_hint" %}
+          </p>
+          <div class="row-2">
+            <div class="field">
+              <label for="id_email">{% t "contact.email" %}</label>
+              <div class="control">
+                <svg aria-hidden="true"><use href="#i-mail"></use></svg>
+                <input type="email" name="email" id="id_email" dir="ltr" maxlength="254"
+                       value="{{ form.email.value|default:'' }}" autocomplete="email" inputmode="email"
+                       placeholder="name@mail.com"
+                       {% if form.email.errors %}aria-invalid="true" aria-describedby="err_email"{% endif %}>
+              </div>
+              {% if form.email.errors %}<span class="field-err" id="err_email">{{ form.email.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="field">
+              <label for="id_phone">{% t "contact.phone" %}</label>
+              <div class="control">
+                <svg aria-hidden="true"><use href="#i-phone"></use></svg>
+                <input type="tel" name="phone" id="id_phone" dir="ltr" maxlength="32"
+                       value="{{ form.phone.value|default:'' }}" autocomplete="tel" inputmode="tel"
+                       placeholder="{% t 'contact.phone_ph' %}"
+                       {% if form.phone.errors %}aria-invalid="true" aria-describedby="err_phone"{% endif %}>
+              </div>
+              {% if form.phone.errors %}<span class="field-err" id="err_phone">{{ form.phone.errors.0 }}</span>{% endif %}
+            </div>
+          </div>
+          <p class="field-err reach-err" id="reach_err" role="alert" data-reach-err
+             {% if not form.reach_missing %}hidden{% endif %}>{% t "contact.reach_required" %}</p>
+        </fieldset>
+
+        <div class="field">
+          <label for="id_body">{% t "contact.message" %}</label>
+          <div class="control">
+            <textarea name="body" id="id_body" rows="6" required maxlength="4000" data-count
+                      {% if form.body.errors %}aria-invalid="true" aria-describedby="err_body"{% endif %}>{{ form.body.value|default:'' }}</textarea>
+          </div>
+          <div class="field-foot">
+            <span>{% if form.body.errors %}<span class="field-err" id="err_body">{{ form.body.errors.0 }}</span>{% endif %}</span>
+            <span class="counter num" data-counter aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="form-foot">
+          <button class="btn btn-primary btn-lg" type="submit" data-submit>
+            <span class="btn-label">{% t "contact.send" %}</span>
+            <svg class="fwd" aria-hidden="true"><use href="#i-arrow"></use></svg>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
