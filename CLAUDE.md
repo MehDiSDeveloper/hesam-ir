@@ -460,6 +460,7 @@ to the form with the success message. Pinned in `tests/test_admin_upload.py`.
 | | |
 |---|---|
 | URL | https://hasan-naderi.ir (`www.` and `http://` redirect here) |
+| Not this app | `static.hasan-naderi.ir` is the owner's personal Xray/Tor proxy (Caddy block, see RUNBOOK "Tor proxy"), not part of the site. Don't use the name `static.` for the site |
 | Server | VPS `91.207.18.218` (Webdade, Ubuntu 24.04). From Windows: `ssh vps` → user `deploy` (key login, passwordless sudo, in the `docker` group) |
 | App dir | `/srv/hesam-ir/`: code (replaced on every deploy), `.env` (production secrets, only on the server), `data/` (the volume; deploy never touches it) |
 | Container | published on `127.0.0.1:8007` → 8000. Only Caddy is public (ports 80/443) |
