@@ -4,6 +4,8 @@
 # "G:\apps backup" every day), unpacked into data/promo/. Production and the
 # dev database are never touched. Contact messages are deleted from the copy
 # because they are visitors' private data and must not appear in a video.
+# fill_profile.py then fills empty English/German profile columns from
+# seed_profile (backups taken before the 2026-10-15 fix lack them).
 #   bash promo/up.sh            # restore the newest backup (only if data/promo is empty)
 #   bash promo/up.sh --fresh    # throw data/promo away and restore again
 set -euo pipefail
@@ -26,4 +28,5 @@ for _ in $(seq 60); do
 done
 docker compose exec -T web python manage.py shell -c \
   "from apps.content.models import Message; print('messages removed:', Message.objects.all().delete()[0])"
+docker compose exec -T web python manage.py shell < fill_profile.py
 echo "promo site: http://127.0.0.1:8017"
