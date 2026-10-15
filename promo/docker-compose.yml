@@ -1,0 +1,25 @@
+# ── promo recording copy — never deployed ──────────────────────────────────
+# A second, throw-away copy of the site for recording promo videos. It runs on
+# port 8017 with its own data in data/promo/ (a copy of the latest production
+# backup), so neither production nor the dev database at data/ is touched.
+#   up:     bash promo/up.sh
+#   remove: bash promo/down.sh
+name: hesam-promo
+services:
+  web:
+    build: ..
+    ports:
+      - "127.0.0.1:8017:8000"
+    env_file:
+      - ../.env
+    environment:
+      DJANGO_DEBUG: "1"          # Django serves /media/ only with DEBUG on
+      DJANGO_SITE_URL: "https://hasan-naderi.ir"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+      DJANGO_GEO_COUNTRY_HEADER: ""
+      BALE_BOT_TOKEN: ""         # the copy never talks to Bale
+      BALE_CHAT_IDS: ""
+    volumes:
+      - ../data/promo:/app/data
+    command: sh -c "python manage.py migrate --noinput && python manage.py ensure_admin && python manage.py runserver 0.0.0.0:8000"
+    restart: "no"

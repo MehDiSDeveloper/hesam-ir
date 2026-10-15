@@ -48,6 +48,27 @@ unchanged later. `test_geo_language.py` pins the redirect; `test_pages.py` pins
 every route in all three languages, the services offer, per-language post SEO,
 the sitemap and the Markdown rendering.
 
+### Promo copy (for recording Instagram videos)
+
+A second, throw-away copy of the site for recording promo videos, with the
+**real content**: `promo/up.sh` unpacks the newest nightly backup from
+`G:\apps backup\<date>\hesam-ir.tar.gz` into `data/promo/`, deletes the contact
+messages from the copy (visitors' private data), and serves it on
+`http://127.0.0.1:8017` as compose project `hesam-promo` (DEBUG on, no Bale, no
+geo redirect). Production and the dev database in `data/` are never touched; no
+mock data is needed because the real profile, projects and articles are there.
+
+```bash
+bash promo/up.sh            # start (restores the backup only if data/promo is empty)
+bash promo/up.sh --fresh    # restore the newest backup again
+bash promo/down.sh          # remove it all: container, image, data/promo/
+```
+
+The data lives under `data/promo/`, not `promo/data/`, because `deploy.sh`
+skips only the root `data/` and would otherwise upload a database copy to the
+server. The capture script and the recordings live outside this repo, in
+`G:\Repos\promo\hesam-ir\` (see `G:\Repos\promo\SPEC.md`).
+
 ## The shape of the project
 
 ```

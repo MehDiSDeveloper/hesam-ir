@@ -12,3 +12,4 @@ data/staticfiles
 *.md
 !README.md
 data/geoip
+data/promo

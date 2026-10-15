@@ -29,3 +29,7 @@ data/*.log
 .claude/settings.local.json
 .DS_Store
 Thumbs.db
+
+# promo recording copy (restored from a production backup by promo/up.sh)
+data/promo/
+promo/node_modules/
